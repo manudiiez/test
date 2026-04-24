@@ -1,0 +1,1256 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz — Seguridad Informática</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --border: #1e1e2e;
+    --accent: #00ff9d;
+    --accent2: #ff3c6e;
+    --accent3: #4d9fff;
+    --text: #e8e8f0;
+    --muted: #5a5a72;
+    --correct: #00ff9d;
+    --wrong: #ff3c6e;
+    --card: #13131c;
+    --multi: #c77dff;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    padding: 2rem 1rem 4rem;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    top: -30%;
+    left: -20%;
+    width: 60vw;
+    height: 60vw;
+    background: radial-gradient(circle, rgba(0,255,157,0.04) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+  body::after {
+    content: '';
+    position: fixed;
+    bottom: -20%;
+    right: -15%;
+    width: 50vw;
+    height: 50vw;
+    background: radial-gradient(circle, rgba(255,60,110,0.05) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 780px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 3rem;
+    animation: fadeDown 0.6s ease both;
+  }
+
+  .tag {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.25em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 0.75rem;
+    display: block;
+  }
+
+  h1 {
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+  }
+
+  h1 span { color: var(--accent); }
+
+  .subtitle {
+    margin-top: 0.75rem;
+    color: var(--muted);
+    font-size: 0.95rem;
+    font-family: 'Space Mono', monospace;
+  }
+
+  /* Progress */
+  .progress-bar-wrap {
+    background: var(--border);
+    border-radius: 99px;
+    height: 4px;
+    margin-bottom: 2.5rem;
+    overflow: hidden;
+    animation: fadeIn 0.5s ease both 0.3s;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent3));
+    border-radius: 99px;
+    transition: width 0.5s cubic-bezier(0.4,0,0.2,1);
+    width: 0%;
+  }
+  .progress-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--muted);
+    text-align: right;
+    margin-bottom: 0.5rem;
+  }
+
+  /* Question card */
+  .question-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 2rem;
+    margin-bottom: 1.5rem;
+    animation: slideUp 0.4s ease both;
+    transition: border-color 0.3s;
+  }
+  .question-card:hover { border-color: #2a2a3a; }
+
+  .q-header {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+    margin-bottom: 1.25rem;
+  }
+
+  .q-num {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--accent);
+    background: rgba(0,255,157,0.08);
+    border: 1px solid rgba(0,255,157,0.2);
+    border-radius: 6px;
+    padding: 0.2rem 0.5rem;
+    white-space: nowrap;
+    margin-top: 0.15rem;
+    flex-shrink: 0;
+  }
+
+  .q-num.multi-badge {
+    color: var(--multi);
+    background: rgba(199,125,255,0.08);
+    border-color: rgba(199,125,255,0.25);
+  }
+
+  .q-topic {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--muted);
+    margin-top: 0.3rem;
+  }
+
+  .q-text {
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.5;
+    letter-spacing: -0.01em;
+  }
+
+  .multi-hint {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.62rem;
+    color: var(--multi);
+    background: rgba(199,125,255,0.08);
+    border: 1px solid rgba(199,125,255,0.2);
+    border-radius: 5px;
+    padding: 0.15rem 0.5rem;
+    margin-top: 0.5rem;
+  }
+
+  /* Options */
+  .options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    margin-top: 0.75rem;
+  }
+
+  .option-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    font-size: 0.9rem;
+    padding: 0.75rem 1rem;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+  }
+
+  .option-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--accent);
+    opacity: 0;
+    transition: opacity 0.18s;
+  }
+
+  /* Single select hover */
+  .option-btn.single:hover:not(:disabled) {
+    border-color: var(--accent3);
+    color: #fff;
+    transform: translateX(3px);
+  }
+  .option-btn.single:hover:not(:disabled)::before { opacity: 0.04; }
+
+  /* Multi select */
+  .option-btn.multi:hover:not(:disabled) {
+    border-color: var(--multi);
+    color: #fff;
+    transform: translateX(3px);
+  }
+  .option-btn.multi.selected:not(:disabled) {
+    border-color: var(--multi);
+    background: rgba(199,125,255,0.1);
+    color: var(--multi);
+  }
+  .option-btn.multi.selected .option-letter {
+    background: var(--multi);
+    color: var(--bg);
+  }
+
+  .option-letter {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: var(--muted);
+    background: var(--border);
+    border-radius: 5px;
+    padding: 0.15rem 0.4rem;
+    flex-shrink: 0;
+    transition: all 0.18s;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Multi: checkbox visual */
+  .option-btn.multi .option-letter {
+    border-radius: 4px;
+    width: 22px;
+    text-align: center;
+  }
+
+  .option-text { position: relative; z-index: 1; }
+
+  .option-btn.correct {
+    border-color: var(--correct);
+    background: rgba(0,255,157,0.07);
+    color: var(--correct);
+  }
+  .option-btn.correct .option-letter {
+    background: var(--correct);
+    color: var(--bg);
+  }
+
+  .option-btn.wrong {
+    border-color: var(--wrong);
+    background: rgba(255,60,110,0.07);
+    color: var(--wrong);
+  }
+  .option-btn.wrong .option-letter {
+    background: var(--wrong);
+    color: #fff;
+  }
+
+  .option-btn.partial-correct {
+    border-color: #f4a261;
+    background: rgba(244,162,97,0.07);
+    color: #f4a261;
+  }
+  .option-btn.partial-correct .option-letter {
+    background: #f4a261;
+    color: var(--bg);
+  }
+
+  .option-btn:disabled { cursor: default; }
+
+  /* Submit button for multi */
+  .multi-submit {
+    margin-top: 0.75rem;
+    background: rgba(199,125,255,0.12);
+    border: 1px solid rgba(199,125,255,0.35);
+    border-radius: 8px;
+    color: var(--multi);
+    font-family: 'Syne', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    padding: 0.65rem 1.25rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.02em;
+  }
+  .multi-submit:hover:not(:disabled) {
+    background: rgba(199,125,255,0.22);
+    transform: translateY(-1px);
+  }
+  .multi-submit:disabled { opacity: 0.4; cursor: default; }
+
+  /* Feedback */
+  .feedback {
+    margin-top: 1rem;
+    font-size: 0.85rem;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    font-family: 'Space Mono', monospace;
+    line-height: 1.5;
+    display: none;
+  }
+  .feedback.show { display: block; }
+  .feedback.correct-fb { background: rgba(0,255,157,0.07); border: 1px solid rgba(0,255,157,0.2); color: var(--correct); }
+  .feedback.wrong-fb { background: rgba(255,60,110,0.07); border: 1px solid rgba(255,60,110,0.2); color: #ff7a9a; }
+  .feedback.partial-fb { background: rgba(244,162,97,0.07); border: 1px solid rgba(244,162,97,0.2); color: #f4a261; }
+
+  /* Score panel */
+  .score-panel {
+    display: none;
+    text-align: center;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 3rem 2rem;
+    animation: slideUp 0.5s ease both;
+  }
+  .score-panel.show { display: block; }
+
+  .score-ring {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    border: 3px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.5rem;
+    font-size: 2.2rem;
+    font-weight: 800;
+    font-family: 'Space Mono', monospace;
+    position: relative;
+  }
+  .score-ring::after {
+    content: '';
+    position: absolute;
+    inset: -3px;
+    border-radius: 50%;
+    background: conic-gradient(var(--accent) var(--pct), var(--border) 0);
+    z-index: -1;
+  }
+
+  .score-label { color: var(--muted); font-size: 0.85rem; margin-bottom: 0.5rem; font-family: 'Space Mono', monospace; }
+  .score-verdict { font-size: 1.5rem; font-weight: 800; margin-bottom: 0.5rem; }
+  .score-detail { color: var(--muted); font-family: 'Space Mono', monospace; font-size: 0.8rem; margin-bottom: 2rem; }
+
+  .btn-restart {
+    background: var(--accent);
+    color: var(--bg);
+    border: none;
+    border-radius: 10px;
+    font-family: 'Syne', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    padding: 0.85rem 2rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.01em;
+  }
+  .btn-restart:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,255,157,0.25); }
+
+  .breakdown {
+    margin-top: 2rem;
+    text-align: left;
+  }
+  .breakdown-title {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    margin-bottom: 1rem;
+  }
+  .breakdown-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.6rem 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.85rem;
+    gap: 1rem;
+  }
+  .breakdown-item:last-child { border-bottom: none; }
+  .bi-topic { color: var(--muted); font-family: 'Space Mono', monospace; font-size: 0.72rem; flex-shrink: 0; }
+  .bi-q { flex: 1; }
+  .bi-result { font-family: 'Space Mono', monospace; font-size: 0.72rem; font-weight: 700; }
+  .bi-result.ok { color: var(--correct); }
+  .bi-result.fail { color: var(--wrong); }
+  .bi-result.partial { color: #f4a261; }
+
+  @keyframes fadeDown { from { opacity:0; transform: translateY(-16px); } to { opacity:1; transform: none; } }
+  @keyframes slideUp { from { opacity:0; transform: translateY(20px); } to { opacity:1; transform: none; } }
+  @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <span class="tag">// Cuestionario de repaso</span>
+    <h1>Seguridad<br><span>Informática</span></h1>
+    <p class="subtitle">Opción única · <span style="color:var(--multi)">Selección múltiple</span> · Justificación por respuesta</p>
+  </header>
+
+  <div id="quiz-area">
+    <div class="progress-label" id="progress-label">Pregunta 1 de —</div>
+    <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progress-bar"></div></div>
+    <div id="questions-container"></div>
+  </div>
+
+  <div class="score-panel" id="score-panel">
+    <p class="score-label">Resultado final</p>
+    <div class="score-ring" id="score-ring" style="--pct:0deg">—</div>
+    <div class="score-verdict" id="score-verdict"></div>
+    <div class="score-detail" id="score-detail"></div>
+    <button class="btn-restart" onclick="restart()">↺ Reiniciar Quiz</button>
+    <div class="breakdown" id="breakdown">
+      <div class="breakdown-title">Detalle por pregunta</div>
+      <div id="breakdown-list"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ─────────────────────────────────────────────────────────
+//  PREGUNTAS
+//  type: "single" | "multi"
+//  Para multi: correct es true/false por opción
+//              correctCount = cuántas hay que marcar
+// ─────────────────────────────────────────────────────────
+const ALL_QUESTIONS = [
+
+  // ════════════════════ ACTIVOS ════════════════════
+  {
+    type: "single",
+    topic: "Activos",
+    question: "¿Cuál de las siguientes opciones define correctamente un 'activo de información'?",
+    options: [
+      { text: "Cualquier herramienta de software que automatiza procesos internos", correct: false, feedback: "El software puede ser un activo, pero la definición no se limita a herramientas de automatización." },
+      { text: "Cualquier información o dato que posee valor para una organización o individuo", correct: true, feedback: "Correcto. Un activo de información es 'algo' que genera valor; el activo principal de la seguridad informática es la información." },
+      { text: "La infraestructura de red que soporta la transmisión de datos en la organización", correct: false, feedback: "La infraestructura de red puede ser un activo, pero la definición de activo de información es más amplia." },
+      { text: "El conjunto de políticas y normas que regulan el uso de la tecnología", correct: false, feedback: "Las políticas son parte del SGSI, no la definición de activo de información." }
+    ]
+  },
+
+  // ════════════════════ CIA ════════════════════
+  {
+    type: "single",
+    topic: "Pilares CIA",
+    question: "La 'Disponibilidad' como pilar de seguridad se enfoca en garantizar que:",
+    options: [
+      { text: "Solo usuarios autorizados puedan leer la información (Read)", correct: false, feedback: "Eso describe la Confidencialidad, no la Disponibilidad." },
+      { text: "La información no pueda ser modificada sin autorización (Write)", correct: false, feedback: "Eso describe la Integridad, no la Disponibilidad." },
+      { text: "Los sistemas e información sean accesibles para usuarios autorizados cuando sea necesario (Access)", correct: true, feedback: "Correcto. La Disponibilidad asegura el acceso oportuno a la información y los sistemas." },
+      { text: "Los datos en tránsito viajen cifrados entre origen y destino", correct: false, feedback: "El cifrado en tránsito apoya la Confidencialidad; no define a la Disponibilidad." }
+    ]
+  },
+  {
+    type: "single",
+    topic: "Pilares CIA",
+    question: "Un atacante modifica registros contables en una base de datos sin ser detectado. ¿Qué pilar del modelo CIA fue vulnerado principalmente?",
+    options: [
+      { text: "Confidencialidad, porque accedió sin autorización a datos reservados", correct: false, feedback: "La confidencialidad se viola al leer datos sin permiso; aquí el daño fue la modificación." },
+      { text: "Disponibilidad, porque los usuarios no pueden confiar en el sistema", correct: false, feedback: "La disponibilidad refiere al acceso oportuno, no a la veracidad del contenido." },
+      { text: "Integridad, porque alteró información sin autorización", correct: true, feedback: "Correcto. La integridad impide la modificación no autorizada (Write); modificar registros la viola directamente." },
+      { text: "Todos los pilares por igual, ya que cualquier ataque los compromete simultáneamente", correct: false, feedback: "Los pilares pueden afectarse juntos, pero aquí el principal afectado es la Integridad." }
+    ]
+  },
+  {
+    type: "multi",
+    topic: "Pilares CIA",
+    question: "Un ransomware cifra todos los archivos de un servidor y los deja inaccesibles. ¿Qué pilares del modelo CIA se ven afectados directamente? (Seleccioná todos los que apliquen)",
+    options: [
+      { text: "Confidencialidad — el cifrado impide que los dueños accedan a su propia información legible", correct: false, feedback: "La confidencialidad protege contra terceros no autorizados; aquí el problema es que los dueños tampoco pueden acceder." },
+      { text: "Disponibilidad — los archivos ya no son accesibles para los usuarios autorizados", correct: true, feedback: "Correcto. El ransomware bloquea el acceso a la información, violando directamente la Disponibilidad." },
+      { text: "Integridad — los archivos fueron modificados (cifrados) sin autorización", correct: true, feedback: "Correcto. Al cifrar los archivos sin autorización, se alteró su contenido, afectando la Integridad." },
+      { text: "No repudio — el atacante puede negar haber cifrado los datos", correct: false, feedback: "El no repudio no es uno de los tres pilares CIA del material; el daño aquí es en Disponibilidad e Integridad." }
+    ]
+  },
+
+  // ════════════════════ AMENAZA / VULNERABILIDAD / RIESGO ════════════════════
+  {
+    type: "single",
+    topic: "Amenaza / Vulnerabilidad / Riesgo",
+    question: "La 'necesidad de energía eléctrica' de un servidor es un ejemplo de:",
+    options: [
+      { text: "Amenaza, porque puede causar daño al sistema si falla", correct: false, feedback: "La amenaza es el evento externo (el corte de luz); la necesidad de energía es una condición del propio sistema." },
+      { text: "Riesgo, porque representa la probabilidad de que el servidor se apague", correct: false, feedback: "El riesgo es la probabilidad de que la amenaza explote la debilidad; no es la debilidad en sí." },
+      { text: "Vulnerabilidad, porque es una debilidad que podría ser explotada por una amenaza", correct: true, feedback: "Correcto. La dependencia de electricidad es una debilidad del sistema que un corte de luz puede explotar." },
+      { text: "Contramedida, porque se gestiona mediante un UPS", correct: false, feedback: "El UPS es la contramedida; la dependencia de electricidad es la vulnerabilidad que justifica esa contramedida." }
+    ]
+  },
+  {
+    type: "single",
+    topic: "Amenaza / Vulnerabilidad / Riesgo",
+    question: "Al evaluar el riesgo de un par activo-amenaza, ¿qué dos factores se combinan para calcularlo?",
+    options: [
+      { text: "El valor del activo y el costo de la contramedida", correct: false, feedback: "Esos factores sirven para decidir si implementar una contramedida, no para calcular el riesgo." },
+      { text: "La probabilidad de que la amenaza se materialice y el impacto sobre el negocio", correct: true, feedback: "Correcto. El riesgo = probabilidad de ocurrencia × impacto potencial sobre el negocio." },
+      { text: "La cantidad de vulnerabilidades del activo y el número de amenazas conocidas", correct: false, feedback: "Son insumos del análisis, pero el riesgo se calcula con probabilidad e impacto, no con conteos." },
+      { text: "El tipo de amenaza (interna o externa) y el área organizacional afectada", correct: false, feedback: "Esos son atributos clasificatorios, no los factores que determinan el nivel de riesgo." }
+    ]
+  },
+
+  // ════════════════════ CONTRAMEDIDAS ════════════════════
+  {
+    type: "single",
+    topic: "Contramedidas",
+    question: "La evaluación 'riesgo-recompensa' al decidir implementar una contramedida considera principalmente:",
+    options: [
+      { text: "Si la contramedida elimina completamente el riesgo residual asociado", correct: false, feedback: "Ninguna contramedida elimina el riesgo a cero; ese no puede ser el criterio." },
+      { text: "Si el costo y la complejidad de la contramedida justifican la reducción del riesgo que ofrece", correct: true, feedback: "Correcto. Se pondera si la inversión (presupuesto, complejidad) es razonable frente al riesgo que mitiga." },
+      { text: "Si la contramedida cumple con los requisitos de la norma ISO 27001", correct: false, feedback: "El cumplimiento normativo es un beneficio, pero no el criterio central de la evaluación riesgo-recompensa." },
+      { text: "Si la amenaza asociada es de origen externo o interno a la organización", correct: false, feedback: "El origen de la amenaza no es el factor decisivo; lo son el costo de la contramedida y la magnitud del riesgo." }
+    ]
+  },
+
+  // ════════════════════ SEGURIDAD FÍSICA / LÓGICA / PERSONAS ════════════════════
+  {
+    type: "single",
+    topic: "Áreas de Seguridad",
+    question: "La detección de intrusiones (IDS) y el cifrado de datos son ejemplos de medidas de:",
+    options: [
+      { text: "Seguridad Física, porque protegen la infraestructura de accesos no autorizados", correct: false, feedback: "La seguridad física protege hardware e instalaciones con barreras materiales, no con software." },
+      { text: "Seguridad de las Personas, porque gestionan el comportamiento de los usuarios internos", correct: false, feedback: "La seguridad de personas abarca concientización y políticas; el IDS y el cifrado son herramientas técnicas." },
+      { text: "Seguridad Lógica, porque protegen la información y los sistemas de software", correct: true, feedback: "Correcto. El control de acceso, el cifrado y el IDS son medidas de Seguridad Lógica." },
+      { text: "Continuidad del Negocio, porque minimizan el impacto de incidentes en la operación", correct: false, feedback: "La continuidad del negocio es un marco organizacional más amplio; el IDS y el cifrado son controles lógicos." }
+    ]
+  },
+  {
+    type: "multi",
+    topic: "Áreas de Seguridad",
+    question: "¿Cuáles de las siguientes medidas corresponden a la Seguridad Física? (Seleccioná todas las correctas)",
+    options: [
+      { text: "Sistema de alarma contra incendios en el centro de datos", correct: true, feedback: "Correcto. Los sistemas de alarma son protecciones físicas del hardware y las instalaciones." },
+      { text: "Control de acceso biométrico a la sala de servidores", correct: true, feedback: "Correcto. Los controles biométricos de acceso físico son medidas de Seguridad Física." },
+      { text: "Cifrado de discos duros con AES-256", correct: false, feedback: "El cifrado es una medida de Seguridad Lógica, no física." },
+      { text: "Cámaras de monitoreo continuo en el datacenter", correct: true, feedback: "Correcto. El monitoreo con cámaras es una medida explícita de Seguridad Física." },
+      { text: "Política de contraseñas seguras para usuarios", correct: false, feedback: "Las políticas de contraseñas pertenecen a la Seguridad de las Personas y Seguridad Lógica." }
+    ]
+  },
+
+  // ════════════════════ PLAN DE CONTINGENCIA ════════════════════
+  {
+    type: "single",
+    topic: "Plan de Contingencia",
+    question: "¿Cuál es el objetivo principal de un Plan de Contingencia?",
+    options: [
+      { text: "Prevenir proactivamente todos los incidentes que puedan afectar la organización", correct: false, feedback: "La prevención proactiva corresponde a la Continuidad del Negocio; el Plan de Contingencia responde a incidentes ya ocurridos." },
+      { text: "Minimizar el impacto de incidentes y restablecer la operatividad normal lo más rápido posible", correct: true, feedback: "Correcto. El Plan de Contingencia busca responder a incidentes para minimizar su impacto y recuperar la operación." },
+      { text: "Garantizar que la organización mantenga la certificación ISO 27001 ante eventos adversos", correct: false, feedback: "La certificación ISO es un beneficio del SGSI; no es el objetivo del Plan de Contingencia." },
+      { text: "Transferir los riesgos operativos a terceros mediante contratos de seguro", correct: false, feedback: "Transferir riesgos es una forma de tratarlos en el Análisis de Riesgos, no el objetivo del Plan de Contingencia." }
+    ]
+  },
+  {
+    type: "multi",
+    topic: "Plan de Contingencia",
+    question: "¿Cuáles de los siguientes son componentes válidos de un Plan de Contingencia? (Seleccioná todos los que correspondan)",
+    options: [
+      { text: "Identificación de riesgos y amenazas sobre sistemas críticos", correct: true, feedback: "Correcto. Es la primera etapa: identificar y priorizar los sistemas críticos." },
+      { text: "Desarrollo de procedimientos de respuesta para cada tipo de incidente", correct: true, feedback: "Correcto. Los procedimientos garantizan que todos sepan qué hacer ante un incidente." },
+      { text: "Pruebas y simulaciones periódicas del plan", correct: true, feedback: "Correcto. Las pruebas identifican fallos y entrenan al personal." },
+      { text: "Implementación de sistemas redundantes para prevenir la interrupción de servicios", correct: false, feedback: "Eso corresponde a las estrategias de mitigación del Plan de Continuidad del Negocio, no al Plan de Contingencia que es reactivo." },
+      { text: "Revisión y actualización periódica del plan", correct: true, feedback: "Correcto. El plan debe revisarse para adaptarse a cambios en la infraestructura y el entorno." }
+    ]
+  },
+
+  // ════════════════════ CONTINUIDAD DEL NEGOCIO ════════════════════
+  {
+    type: "single",
+    topic: "Continuidad del Negocio",
+    question: "¿Cuál de los siguientes componentes del Plan de Continuidad del Negocio se encarga de establecer procedimientos para restaurar copias de seguridad y reconstruir infraestructura?",
+    options: [
+      { text: "Análisis de Impacto en el Negocio (BIA)", correct: false, feedback: "El BIA identifica y prioriza funciones críticas; no define los procedimientos de restauración." },
+      { text: "Estrategias de mitigación y prevención", correct: false, feedback: "Las estrategias de mitigación son medidas proactivas; la restauración post-evento es otra fase." },
+      { text: "Plan de recuperación de desastres", correct: true, feedback: "Correcto. El plan de recuperación de desastres define cómo restaurar sistemas, datos e infraestructura tras un evento disruptivo." },
+      { text: "Pruebas y ejercicios periódicos", correct: false, feedback: "Las pruebas evalúan la efectividad del plan y entrenan al personal; no contienen los procedimientos de restauración." }
+    ]
+  },
+  {
+    type: "single",
+    topic: "Continuidad del Negocio",
+    question: "¿Cuál es la diferencia principal entre un Plan de Contingencia y el Plan de Continuidad del Negocio?",
+    options: [
+      { text: "El Plan de Contingencia es proactivo; la Continuidad del Negocio es reactiva a incidentes ya ocurridos", correct: false, feedback: "Es al revés. El Plan de Contingencia es reactivo y la Continuidad del Negocio es proactiva." },
+      { text: "El Plan de Contingencia es reactivo y específico para incidentes; la Continuidad del Negocio es proactiva y asegura la operación durante cualquier crisis", correct: true, feedback: "Correcto. El Plan de Contingencia responde a incidentes puntuales, mientras que la Continuidad del Negocio asegura la resiliencia organizacional completa." },
+      { text: "Ambos son equivalentes; la diferencia es solo terminológica según el estándar ISO que se aplique", correct: false, feedback: "Tienen propósitos y alcances distintos; no son equivalentes." },
+      { text: "El Plan de Contingencia aplica solo a sistemas de TI; la Continuidad del Negocio aplica a toda la organización incluyendo RRHH", correct: false, feedback: "Aunque la Continuidad del Negocio es más amplia, el Plan de Contingencia también abarca personas y procesos, no solo TI." }
+    ]
+  },
+
+  // ════════════════════ ANÁLISIS DE RIESGO ════════════════════
+  {
+    type: "single",
+    topic: "Análisis de Riesgo",
+    question: "En el proceso de Análisis de Riesgos, ¿cuál es la secuencia correcta de las primeras tres etapas?",
+    options: [
+      { text: "Identificar amenazas → Definir el alcance → Identificar activos", correct: false, feedback: "No se puede identificar amenazas antes de saber qué activos proteger ni haber definido el alcance." },
+      { text: "Evaluar el riesgo → Identificar vulnerabilidades → Definir el alcance", correct: false, feedback: "No se puede evaluar el riesgo antes de identificar activos, amenazas y vulnerabilidades." },
+      { text: "Definir el alcance → Identificar los activos → Identificar amenazas", correct: true, feedback: "Correcto. Primero se delimita qué se estudia, luego qué se protege, y después qué puede atacarlo." },
+      { text: "Identificar activos → Evaluar el riesgo → Tratar el riesgo", correct: false, feedback: "Faltan etapas intermedias: identificar amenazas, vulnerabilidades y salvaguardas antes de evaluar y tratar el riesgo." }
+    ]
+  },
+  {
+    type: "multi",
+    topic: "Análisis de Riesgo",
+    question: "¿Cuáles de las siguientes son formas válidas de tratar un riesgo según el Análisis de Riesgos? (Seleccioná todas las correctas)",
+    options: [
+      { text: "Asumir el riesgo justificadamente con un plan de contingencias, cuando el costo de la contramedida es muy alto", correct: true, feedback: "Correcto. Asumir el riesgo es una opción válida cuando mitigarlo resulta inviable económicamente." },
+      { text: "Implementar medidas para mitigar y reducir el riesgo, como contratar redundancia eléctrica", correct: true, feedback: "Correcto. Mitigar es reducir la probabilidad o el impacto con contramedidas específicas." },
+      { text: "Eliminar el riesgo suprimiendo el proceso o sistema que lo genera", correct: true, feedback: "Correcto. Si el riesgo es muy alto, eliminar la fuente es una opción válida." },
+      { text: "Transferir el riesgo a un tercero mediante un seguro o contrato", correct: true, feedback: "Correcto. Contratar un seguro transfiere el riesgo económico a la aseguradora." },
+      { text: "Ignorar el riesgo sin documentarlo ni comunicarlo, dado que siempre existirá un riesgo residual", correct: false, feedback: "Ignorar sin documentar no es una forma válida de tratamiento. Incluso 'asumir' requiere justificación y plan de contingencias." }
+    ]
+  },
+
+  // ════════════════════ ISO 27001 / 17799 / PDCA ════════════════════
+  {
+    type: "single",
+    topic: "ISO 27001",
+    question: "Una empresa obtiene la certificación ISO 27001. ¿Qué implica concretamente ese certificado?",
+    options: [
+      { text: "Que la empresa cumple con todas las leyes nacionales de protección de datos vigentes", correct: false, feedback: "La ISO 27001 es un estándar internacional voluntario; no garantiza cumplimiento de leyes nacionales específicas." },
+      { text: "Que la empresa ha pasado una auditoría independiente y demuestra compromiso con la seguridad de la información", correct: true, feedback: "Correcto. La certificación implica una auditoría de entidad independiente y debe renovarse periódicamente." },
+      { text: "Que la empresa no ha sufrido ningún incidente de seguridad en los últimos tres años", correct: false, feedback: "La certificación evalúa la existencia y madurez del SGSI, no la ausencia histórica de incidentes." },
+      { text: "Que la empresa implementó la norma ISO 17799 como marco de buenas prácticas", correct: false, feedback: "La ISO 17799/27002 es un complemento de buenas prácticas; la certificación formal la otorga la ISO 27001." }
+    ]
+  },
+  {
+    type: "single",
+    topic: "ISO 27001 vs ISO 17799",
+    question: "¿Cuál es la diferencia clave entre la ISO 27001 y la ISO 17799 (27002)?",
+    options: [
+      { text: "La ISO 27001 aplica solo a empresas de tecnología; la ISO 17799 aplica a cualquier sector", correct: false, feedback: "Ambas normas aplican a cualquier tipo de organización sin distinción sectorial." },
+      { text: "La ISO 27001 establece requisitos certificables para el SGSI; la ISO 17799 provee controles y buenas prácticas de referencia", correct: true, feedback: "Correcto. La 27001 es la norma de requisitos (certificable); la 17799/27002 es la guía de buenas prácticas que la complementa." },
+      { text: "La ISO 27001 regula la seguridad física; la ISO 17799 regula la seguridad lógica", correct: false, feedback: "Ninguna de las dos se limita a un área específica; ambas abarcan la seguridad de la información integralmente." },
+      { text: "La ISO 17799 reemplazó y dejó obsoleta a la ISO 27001 en 2005", correct: false, feedback: "No hay relación de reemplazo; la ISO 17799 fue renombrada ISO 27002 y coexiste con la 27001 como su complemento." }
+    ]
+  },
+  {
+    type: "single",
+    topic: "PDCA",
+    question: "En el ciclo PDCA aplicado al SGSI, la fase 'Do' consiste en:",
+    options: [
+      { text: "Establecer el SGSI: definir objetivos, alcance, políticas y gestión de riesgos", correct: false, feedback: "Establecer el SGSI corresponde a la fase 'Plan', no a 'Do'." },
+      { text: "Monitorear y revisar el SGSI evaluando su desempeño frente a los objetivos", correct: false, feedback: "Monitorear y revisar corresponde a la fase 'Check'." },
+      { text: "Implementar y operar el SGSI ejecutando los controles y procedimientos planificados", correct: true, feedback: "Correcto. 'Do' consiste en implementar y operar el SGSI conforme a lo planificado." },
+      { text: "Mantener y mejorar el SGSI aplicando acciones correctivas basadas en los resultados", correct: false, feedback: "Mantener y mejorar corresponde a la fase 'Act'." }
+    ]
+  },
+  {
+    type: "multi",
+    topic: "PDCA",
+    question: "¿Cuáles de los siguientes beneficios corresponden correctamente a la implementación de la ISO 27001? (Seleccioná todos los que apliquen)",
+    options: [
+      { text: "Mejora de la seguridad mediante identificación y gestión sistemática de riesgos", correct: true, feedback: "Correcto. Es uno de los beneficios centrales del SGSI basado en ISO 27001." },
+      { text: "Garantía de que la empresa no sufrirá ningún incidente de seguridad futuro", correct: false, feedback: "La ISO 27001 gestiona riesgos pero no garantiza ausencia de incidentes; el riesgo residual siempre existe." },
+      { text: "Mejora de la confianza de clientes y socios comerciales", correct: true, feedback: "Correcto. La certificación demuestra compromiso con la seguridad de la información ante terceros." },
+      { text: "Cumplimiento normativo con regulaciones legales y contractuales relevantes", correct: true, feedback: "Correcto. La ISO 27001 ayuda a cumplir requisitos legales y regulatorios relacionados con la información." },
+      { text: "Cultura de seguridad promoviendo la responsabilidad de todos los empleados", correct: true, feedback: "Correcto. La norma promueve que la seguridad sea una prioridad en todas las actividades y decisiones." }
+    ]
+  },
+
+  // ════════════════════ POLÍTICA DE SEGURIDAD ════════════════════
+  {
+    type: "single",
+    topic: "Política de Seguridad",
+    question: "¿Cuál es la relación entre el Análisis de Riesgos y la Política de Seguridad?",
+    options: [
+      { text: "La Política de Seguridad reemplaza al Análisis de Riesgos una vez que está formalizada", correct: false, feedback: "No hay reemplazo; el Análisis de Riesgos es continuo y alimenta constantemente la Política de Seguridad." },
+      { text: "El Análisis de Riesgos proporciona la información necesaria para desarrollar y actualizar la Política de Seguridad", correct: true, feedback: "Correcto. El proceso de Análisis de Riesgos es el insumo que permite definir y mantener actualizada la Política de Seguridad." },
+      { text: "La Política de Seguridad determina qué riesgos se analizan y cuáles se ignoran deliberadamente", correct: false, feedback: "La Política de Seguridad define estándares y proyectos, pero no restringe qué riesgos pueden analizarse." },
+      { text: "Ambos documentos son independientes y se desarrollan en paralelo sin relación directa", correct: false, feedback: "Están directamente relacionados: el análisis informa a la política, y la política orienta el alcance del análisis." }
+    ]
+  },
+
+  // ════════════════════ REALIDAD ════════════════════
+  {
+    type: "single",
+    topic: "Realidad de la Seguridad",
+    question: "El ejemplo del teclado del celular que registra conversaciones de WhatsApp ilustra que:",
+    options: [
+      { text: "WhatsApp no implementa correctamente el cifrado de extremo a extremo que anuncia", correct: false, feedback: "El problema no está en WhatsApp; el cifrado de extremo a extremo funciona correctamente." },
+      { text: "El cifrado de extremo a extremo protege el canal de comunicación, pero otras apps en el mismo dispositivo pueden comprometer la información antes de cifrarla", correct: true, feedback: "Correcto. El teclado accede al texto antes de que WhatsApp lo cifre; basta con desconfiar del entorno, no solo del canal." },
+      { text: "Los sistemas operativos móviles no pueden controlar el acceso de las apps a los datos de otras apps", correct: false, feedback: "Los SO modernos tienen sandboxing; el problema es que el usuario concede permisos sin analizarlos." },
+      { text: "Es suficiente conocer de tecnología para protegerse de todas las amenazas de seguridad", correct: false, feedback: "El documento señala explícitamente que 'a veces no basta con saber de tecnología; basta con desconfiar'." }
+    ]
+  },
+
+  // ════════════════════ SEGURIDAD FÍSICA — EQUIPAMIENTO ════════════════════
+  {
+    type: "single",
+    topic: "Seguridad Física — Equipamiento",
+    question: "El 'Piso Técnico' en un centro de datos contribuye principalmente a:",
+    options: [
+      { text: "Proporcionar redundancia eléctrica mediante circuitos independientes", correct: false, feedback: "La redundancia eléctrica se logra con circuitos y UPS; el piso técnico no la provee directamente." },
+      { text: "Controlar el acceso físico mediante sensores biométricos instalados en el suelo", correct: false, feedback: "Los sensores biométricos son controles de acceso independientes; no es la función del piso técnico." },
+      { text: "Permitir la distribución ordenada de cables y conexiones, y facilitar la refrigeración del equipamiento", correct: true, feedback: "Correcto. El piso técnico permite gestionar el cableado y la refrigeración de forma organizada y segura." },
+      { text: "Aislar electromagnéticamente los servidores para protegerlos del ruido eléctrico exterior", correct: false, feedback: "El aislamiento electromagnético requiere jaulas de Faraday u otras soluciones; no es el rol del piso técnico." }
+    ]
+  },
+  {
+    type: "multi",
+    topic: "Seguridad Física — Equipamiento",
+    question: "¿Cuáles de las siguientes características garantizan mayor disponibilidad de un servidor? (Seleccioná todas las correctas)",
+    options: [
+      { text: "Hot Swap de discos duros, que permite reemplazar discos sin apagar el sistema", correct: true, feedback: "Correcto. El Hot Swap es clave para garantizar disponibilidad al evitar tiempos de inactividad." },
+      { text: "Dos fuentes de alimentación redundantes por dispositivo", correct: true, feedback: "Correcto. Las fuentes redundantes aseguran funcionamiento continuo si una falla." },
+      { text: "Procesadores redundantes con balanceo de carga", correct: true, feedback: "Correcto. Los procesadores redundantes mantienen la operatividad si uno falla." },
+      { text: "Cifrado de todos los datos en reposo con AES-256", correct: false, feedback: "El cifrado mejora la Confidencialidad, no la Disponibilidad. No es una característica de alta disponibilidad." },
+      { text: "Dos placas de red con redundancia para conectividad constante", correct: true, feedback: "Correcto. La redundancia de red garantiza conectividad incluso ante fallos de una placa." }
+    ]
+  },
+
+  // ════════════════════ TENSIÓN ELÉCTRICA / UPS ════════════════════
+  {
+    type: "single",
+    topic: "Tensión Eléctrica",
+    question: "¿Qué problema de tensión eléctrica se caracteriza por generar perturbaciones no deseadas en la señal eléctrica, afectando especialmente a equipos delicados?",
+    options: [
+      { text: "Baja tensión, porque el voltaje suministrado cae por debajo del nivel requerido", correct: false, feedback: "La baja tensión causa ineficiencia y daño a largo plazo, no perturbaciones en la señal." },
+      { text: "Sobretensión, porque el voltaje supera los 220V de forma repentina", correct: false, feedback: "La sobretensión es un pico de voltaje, no una perturbación continua en la señal." },
+      { text: "Ruido eléctrico, porque otros dispositivos en la misma red generan interferencias en la señal", correct: true, feedback: "Correcto. El ruido eléctrico son perturbaciones causadas por otros dispositivos conectados a la misma red eléctrica." },
+      { text: "Microcorte, porque la interrupción breve desestabiliza la señal eléctrica del circuito", correct: false, feedback: "El microcorte es una interrupción puntual del suministro, no una perturbación continua de la señal." }
+    ]
+  },
+  {
+    type: "single",
+    topic: "UPS",
+    question: "Un UPS entra en modo by-pass automático. ¿Qué consecuencia directa tiene esto sobre la protección del equipamiento?",
+    options: [
+      { text: "El UPS comienza a usar las baterías de respaldo, protegiendo los equipos ante cualquier fallo eléctrico", correct: false, feedback: "En by-pass, el UPS se desconecta de los equipos; no usa baterías para protegerlos." },
+      { text: "El UPS se desconecta de los equipos y los deja conectados directamente a la red, sin protección ante microcortes", correct: true, feedback: "Correcto. En modo by-pass, los equipos quedan directamente en la red y el UPS no puede protegerlos de microcortes." },
+      { text: "El UPS activa el grupo electrógeno para garantizar energía limpia mientras se recupera", correct: false, feedback: "El grupo electrógeno se activa con la llave de transferencia al detectar baja de red, no por el by-pass del UPS." },
+      { text: "El UPS redirige la carga hacia el circuito secundario con doble fuente de alimentación", correct: false, feedback: "El by-pass desconecta al UPS del circuito de protección; no existe redirección a un circuito secundario propio del UPS." }
+    ]
+  },
+  {
+    type: "multi",
+    topic: "UPS / Contingencia Eléctrica",
+    question: "¿Cuáles de los siguientes problemas de tensión puede mitigar un UPS correctamente dimensionado? (Seleccioná todos los que apliquen)",
+    options: [
+      { text: "Microcortes: interrupciones muy breves del suministro eléctrico", correct: true, feedback: "Correcto. Un UPS con buena fuente puede absorber microcortes sin que el equipo lo note." },
+      { text: "Apagones prolongados de varias horas", correct: false, feedback: "Un UPS convencional proporciona autonomía de 30-40 minutos; para apagones prolongados se necesita un grupo electrógeno." },
+      { text: "Ruido eléctrico causado por otros dispositivos en la red", correct: false, feedback: "El UPS online puede filtrar algo de ruido, pero no es su función principal; para eso existen filtros y supresores dedicados." },
+      { text: "Sobretensiones que superen los 220V", correct: false, feedback: "Las sobretensiones superiores a 220V pueden quemar el equipamiento; los supresores de picos son el dispositivo adecuado." },
+      { text: "Cortes breves de energía mientras se activa el grupo electrógeno", correct: true, feedback: "Correcto. El UPS provee energía durante el tiempo que tarda el grupo electrógeno en arrancar y estabilizarse." }
+    ]
+  },
+
+  // ════════════════════ CLOUD COMPUTING ════════════════════
+  {
+    type: "single",
+    topic: "Cloud Computing",
+    question: "Una empresa necesita escalar rápidamente su capacidad de procesamiento durante un pico de demanda sin invertir en hardware propio. ¿Qué modelo de servicio cloud le conviene más?",
+    options: [
+      { text: "SaaS, porque puede acceder a aplicaciones complejas sin preocuparse por la infraestructura", correct: false, feedback: "SaaS ofrece aplicaciones específicas; no permite escalar capacidad de procesamiento a demanda propia." },
+      { text: "IaaS, porque el proveedor ofrece servidores virtuales y almacenamiento que la empresa gestiona según sus necesidades", correct: true, feedback: "Correcto. IaaS provee infraestructura virtualizada (servidores, redes, almacenamiento) que la empresa configura y escala a demanda." },
+      { text: "PaaS, porque incluye herramientas de desarrollo y bases de datos listas para usar", correct: false, feedback: "PaaS es ideal para desarrollar aplicaciones; no es el modelo más directo para escalar infraestructura de procesamiento." },
+      { text: "Housing, porque la empresa puede colocar sus propios servidores en el datacenter del proveedor", correct: false, feedback: "Housing requiere que la empresa tenga sus propios servidores físicos; no permite escalar sin hardware propio." }
+    ]
+  },
+  {
+    type: "multi",
+    topic: "Cloud Computing",
+    question: "¿Cuáles de los siguientes son beneficios reales del Cloud Computing según el material? (Seleccioná todos los correctos)",
+    options: [
+      { text: "Escalabilidad vertical (mayores especificaciones) y horizontal (más nodos) según la demanda", correct: true, feedback: "Correcto. La nube permite crecer en ambas dimensiones de manera flexible." },
+      { text: "Eliminación total de riesgos de seguridad y privacidad al delegar la infraestructura al proveedor", correct: false, feedback: "El Cloud también plantea consideraciones de seguridad, privacidad y cumplimiento normativo que deben evaluarse." },
+      { text: "Accesibilidad desde cualquier ubicación y dispositivo con conexión a Internet", correct: true, feedback: "Correcto. La disponibilidad ubicua es un beneficio clave del cloud computing." },
+      { text: "Reducción de costos de mantenimiento e inversión en infraestructura física", correct: true, feedback: "Correcto. El modelo de pago por consumo evita inversiones en infraestructura propia." },
+      { text: "Servicios de respaldo y recuperación de datos provistos por el proveedor", correct: true, feedback: "Correcto. Los proveedores cloud ofrecen backup como protección adicional contra pérdida de información." }
+    ]
+  },
+
+  // ════════════════════ CONTROL DE ACCESO ════════════════════
+  {
+    type: "single",
+    topic: "Control de Acceso",
+    question: "Un sistema solicita nombre de usuario y contraseña, luego verifica si ese usuario tiene permiso para acceder a una carpeta compartida. ¿Qué dos procesos del control de acceso se describen en esa secuencia?",
+    options: [
+      { text: "Identificación → Auditoría", correct: false, feedback: "La auditoría registra eventos; aquí se describe la verificación de credenciales y la asignación de permisos." },
+      { text: "Autenticación → Control de acceso lógico", correct: false, feedback: "Falta la autenticación y confunde el orden; el usuario primero se identifica con el nombre de usuario." },
+      { text: "Autenticación → Autorización", correct: true, feedback: "Correcto. Ingresar usuario/contraseña es autenticación; verificar si puede acceder a la carpeta es autorización." },
+      { text: "Identificación → Autorización, omitiendo la autenticación", correct: false, feedback: "La contraseña es la autenticación; la secuencia completa incluye autenticación antes de la autorización." }
+    ]
+  },
+  {
+    type: "multi",
+    topic: "Control de Acceso",
+    question: "¿Cuáles de los siguientes son aspectos clave del Control de Acceso según el material? (Seleccioná todos los correctos)",
+    options: [
+      { text: "Identificación: establecer quién dice ser el usuario", correct: true, feedback: "Correcto. La identificación es el primer paso del control de acceso (ej: nombre de usuario)." },
+      { text: "Autenticación: verificar la identidad declarada mediante credenciales", correct: true, feedback: "Correcto. La autenticación confirma que la identidad declarada es válida." },
+      { text: "Autorización: determinar qué recursos y acciones puede realizar el usuario autenticado", correct: true, feedback: "Correcto. La autorización asigna permisos y privilegios al usuario verificado." },
+      { text: "Auditoría y registro de eventos: supervisar accesos y detectar violaciones de seguridad", correct: true, feedback: "Correcto. El registro y monitoreo de eventos es parte fundamental del control de acceso." },
+      { text: "Encriptación de datos: proteger la información mientras viaja por la red interna", correct: false, feedback: "La encriptación es una medida de Seguridad Lógica pero no es un componente del Control de Acceso." }
+    ]
+  },
+
+  // ════════════════════ FIREWALL ════════════════════
+  {
+    type: "single",
+    topic: "Firewall",
+    question: "Las reglas de un firewall se evalúan según el principio FIFO. ¿Cuál es la consecuencia práctica de este principio?",
+    options: [
+      { text: "La regla más reciente siempre tiene prioridad sobre las más antiguas", correct: false, feedback: "FIFO es 'primero en entrar, primero en salir'; las reglas más específicas deben ir primero, no las más recientes." },
+      { text: "La primera regla que coincida con un paquete determina la acción; las siguientes no se evalúan para ese paquete", correct: true, feedback: "Correcto. Por eso las reglas deben ordenarse de más específicas a más generales; la primera coincidencia gana." },
+      { text: "Todas las reglas se evalúan y la acción resultante es la de la regla con mayor prioridad numérica", correct: false, feedback: "No se evalúan todas; la evaluación se detiene en la primera coincidencia." },
+      { text: "Las reglas de denegación siempre se evalúan antes que las reglas de permiso independientemente del orden", correct: false, feedback: "No existe tal prioridad por tipo de acción; el orden de evaluación es estrictamente secuencial." }
+    ]
+  },
+  {
+    type: "single",
+    topic: "Firewall",
+    question: "Un firewall de Capa de Aplicación (WAF) se diferencia de un firewall de Capa de Red porque:",
+    options: [
+      { text: "Opera desde la capa 1 hasta la capa 4 del modelo OSI, filtrando por IP y puerto solamente", correct: false, feedback: "Eso describe el firewall de primera generación / capa de red, no el WAF." },
+      { text: "Solo permite tráfico desde direcciones IP previamente registradas en una lista blanca", correct: false, feedback: "Las listas blancas son una técnica de configuración, no la característica definitoria del WAF." },
+      { text: "Inspecciona el contenido del tráfico HTTP/HTTPS para proteger contra ataques como SQLi y XSS", correct: true, feedback: "Correcto. El WAF opera en capa de aplicación e inspecciona el contenido real de las peticiones web." },
+      { text: "Actúa como proxy transparente sin modificar las cabeceras de los paquetes", correct: false, feedback: "El WAF puede modificar cabeceras; su característica distintiva es inspeccionar el contenido de las peticiones." }
+    ]
+  },
+  {
+    type: "multi",
+    topic: "Firewall",
+    question: "¿Cuáles de las siguientes acciones puede tomar una regla de firewall al evaluar un paquete? (Seleccioná todas las correctas)",
+    options: [
+      { text: "Permitir que el paquete pase a su destino", correct: true, feedback: "Correcto. 'Permitir' es una de las acciones básicas de una regla de firewall." },
+      { text: "Denegar el paquete, impidiendo que pase", correct: true, feedback: "Correcto. 'Denegar' es la acción opuesta a permitir y es fundamental en la seguridad perimetral." },
+      { text: "Redirigir el paquete hacia un destino diferente al original", correct: true, feedback: "Correcto. La redirección es una acción válida, usada por ejemplo en honeyports o load balancing." },
+      { text: "Registrar información del tráfico para análisis posterior (logs)", correct: true, feedback: "Correcto. El registro es fundamental para auditorías y detección de patrones de ataque." },
+      { text: "Cifrar el contenido del paquete antes de reenviarlo al destino", correct: false, feedback: "El cifrado es una función de VPN o TLS; los firewalls tradicionales no cifran el contenido de los paquetes." }
+    ]
+  },
+
+  // ════════════════════ DMZ / SEGMENTACIÓN ════════════════════
+  {
+    type: "single",
+    topic: "Segmentación de Redes — DMZ",
+    question: "¿Por qué los servidores web públicos se ubican en la DMZ (Zona Desmilitarizada) en lugar de en la red interna?",
+    options: [
+      { text: "Porque la DMZ tiene mayor ancho de banda que la red interna, optimizando la entrega de contenido", correct: false, feedback: "El ancho de banda no es el motivo; la DMZ se usa por razones de seguridad, no de rendimiento." },
+      { text: "Para limitar el acceso directo a la red interna si el servidor web es comprometido, reduciendo el radio de daño", correct: true, feedback: "Correcto. La DMZ aísla los servicios expuestos al exterior para que un compromiso no afecte directamente la red interna." },
+      { text: "Porque los servidores web no pueden funcionar dentro de redes privadas con direcciones IP internas", correct: false, feedback: "Los servidores web funcionan perfectamente en redes privadas; el motivo de la DMZ es puramente de seguridad." },
+      { text: "Para evitar que el firewall tenga que inspeccionar el tráfico web, reduciendo su carga de procesamiento", correct: false, feedback: "El firewall sigue inspeccionando el tráfico hacia la DMZ; la segmentación no busca reducir la carga del firewall." }
+    ]
+  },
+
+  // ════════════════════ IDS ════════════════════
+  {
+    type: "single",
+    topic: "IDS",
+    question: "¿Cuál es la diferencia principal entre un HIDS y un NIDS?",
+    options: [
+      { text: "El HIDS analiza tráfico de red; el NIDS analiza archivos y procesos del sistema operativo", correct: false, feedback: "Es al revés: el HIDS analiza el host (archivos, procesos), el NIDS analiza el tráfico de red." },
+      { text: "El HIDS monitorea actividades en un host específico; el NIDS realiza sniffing del tráfico en la red", correct: true, feedback: "Correcto. HIDS = Host-based IDS (monitorea el sistema local); NIDS = Network-based IDS (monitorea el tráfico de red)." },
+      { text: "El HIDS es más adecuado para grandes redes; el NIDS para estaciones de trabajo individuales", correct: false, feedback: "Es al revés: el NIDS abarca grandes redes con bajo impacto; el HIDS se enfoca en hosts individuales." },
+      { text: "El HIDS detecta amenazas externas; el NIDS detecta amenazas internas de la organización", correct: false, feedback: "Ambos pueden detectar amenazas internas y externas; la diferencia es el punto de monitoreo, no el origen de la amenaza." }
+    ]
+  },
+  {
+    type: "multi",
+    topic: "IDS",
+    question: "¿Cuáles de las siguientes afirmaciones sobre los tipos de IDS son correctas? (Seleccioná todas las que apliquen)",
+    options: [
+      { text: "Los NIDS realizan sniffing en la red y tienen bajo impacto al abarcar grandes redes; ejemplos: SNORT, NFR", correct: true, feedback: "Correcto. Los NIDS son ideales para redes grandes y tienen bajo impacto en el rendimiento de la red." },
+      { text: "Los LIDS analizan archivos de logs del sistema para detectar actividades anómalas con alta precisión", correct: true, feedback: "Correcto. Los LIDS (Log-based IDS) se caracterizan por su precisión al revisar registros de eventos." },
+      { text: "Los DIDS son IDS distribuidos y adaptativos, diseñados para redes Windows con arquitectura multiagente", correct: true, feedback: "Correcto. Los DIDS son parte del NIDS pero distribuidos en varios puntos de la red con consolidación central." },
+      { text: "Un IDS puede reemplazar completamente la función de un firewall al detectar y bloquear intrusiones", correct: false, feedback: "Un IDS detecta y alerta, pero no necesariamente bloquea; esa función la cumple un IPS. Ambos complementan al firewall." },
+      { text: "Los HIDS incluyen herramientas como Tripwire y SWATCH para monitorear comportamiento a nivel de sistema operativo", correct: true, feedback: "Correcto. Tripwire y SWATCH son ejemplos de HIDS que monitorizan archivos y procesos del sistema." }
+    ]
+  },
+
+  // ════════════════════ AMENAZAS ════════════════════
+  {
+    type: "single",
+    topic: "Amenazas",
+    question: "Un atacante envía masivamente paquetes SYN sin completar el handshake TCP, agotando los recursos del servidor. ¿Qué ataque describe esto?",
+    options: [
+      { text: "ARP Spoofing, porque falsifica direcciones en la red local para interceptar tráfico", correct: false, feedback: "ARP Spoofing manipula tablas ARP; no tiene relación con el handshake TCP." },
+      { text: "SYN Flood, porque sobrecarga el servidor con solicitudes de conexión falsas que nunca se completan", correct: true, feedback: "Correcto. El SYN Flood explota el handshake TCP enviando SYN masivos sin responder al SYN-ACK, agotando los recursos." },
+      { text: "Smurf Attack, porque usa direcciones de broadcast para amplificar el ataque", correct: false, feedback: "El Smurf Attack usa paquetes ICMP de eco a dirección broadcast; no involucra el protocolo TCP ni el handshake." },
+      { text: "Man in the Middle, porque intercepta la comunicación entre cliente y servidor", correct: false, feedback: "El MitM captura información en tránsito; no busca agotar recursos del servidor." }
+    ]
+  },
+  {
+    type: "multi",
+    topic: "Amenazas",
+    question: "¿Cuáles de los siguientes ataques son variantes o categorías de ataques de Denegación de Servicio (DoS/DDoS)? (Seleccioná todos los que apliquen)",
+    options: [
+      { text: "SYN Flood: sobrecarga de solicitudes SYN falsas que agotan los recursos del servidor", correct: true, feedback: "Correcto. El SYN Flood es un ataque DoS clásico que explota el handshake TCP." },
+      { text: "Smurf Attack: envío masivo de paquetes ICMP a dirección broadcast que inundan a la víctima", correct: true, feedback: "Correcto. El Smurf Attack genera una avalancha de respuestas ICMP que saturan a la víctima." },
+      { text: "Ping Flood: envío masivo de solicitudes de ping para saturar el servidor objetivo", correct: true, feedback: "Correcto. El Ping Flood es una forma directa de DoS usando paquetes ICMP de eco." },
+      { text: "DNS Poisoning: inserción de información corrupta en la caché de un servidor DNS", correct: false, feedback: "El DNS Poisoning busca redirigir usuarios a sitios maliciosos, no denegar el servicio; es una amenaza diferente." },
+      { text: "DDOS: ataque coordinado desde múltiples fuentes distribuidas para saturar un sistema", correct: true, feedback: "Correcto. El DDoS es la versión distribuida del DoS, usando múltiples equipos comprometidos para el ataque." }
+    ]
+  },
+  {
+    type: "single",
+    topic: "Amenazas",
+    question: "Un atacante inserta caracteres de escape en el campo de búsqueda de un sitio web y logra extraer información de la base de datos. ¿Qué técnica utilizó?",
+    options: [
+      { text: "XSS (Cross-Site Scripting), porque inyectó scripts maliciosos en la página para robar datos", correct: false, feedback: "XSS inyecta scripts que se ejecutan en el navegador de otros usuarios; no accede directamente a la base de datos." },
+      { text: "DNS Spoofing, porque redirigió al usuario a una base de datos falsa", correct: false, feedback: "DNS Spoofing falsifica respuestas DNS para redirigir tráfico; no interactúa con formularios de aplicaciones web." },
+      { text: "Inyección SQL, porque usó caracteres de escape para infiltrarse y manipular la base de datos", correct: true, feedback: "Correcto. La inyección SQL usa caracteres especiales para alterar las consultas y acceder o manipular la base de datos." },
+      { text: "Man in the Middle, porque interceptó la comunicación entre el usuario y el servidor de base de datos", correct: false, feedback: "MitM intercepta comunicaciones en tránsito; aquí el ataque fue directamente a través del formulario de la aplicación." }
+    ]
+  },
+  {
+    type: "multi",
+    topic: "Amenazas",
+    question: "¿Cuáles de las siguientes amenazas involucran falsificación o suplantación de identidades o direcciones? (Seleccioná todas las que apliquen)",
+    options: [
+      { text: "ARP Spoofing: falsificación de direcciones MAC en la red local para interceptar tráfico", correct: true, feedback: "Correcto. El ARP Spoofing suplanta la identidad de un dispositivo a nivel de capa 2." },
+      { text: "IP Spoofing: falsificación de la dirección IP de origen en paquetes para ocultar al atacante", correct: true, feedback: "Correcto. El IP Spoofing modifica la IP de origen para ocultar la identidad del atacante." },
+      { text: "DNS Spoofing: falsificación de respuestas DNS para redirigir usuarios a sitios maliciosos", correct: true, feedback: "Correcto. El DNS Spoofing hace que el usuario resuelva un dominio legítimo con una IP maliciosa." },
+      { text: "Robo de Identidad: obtención y uso no autorizado de información personal para suplantar a un individuo", correct: true, feedback: "Correcto. El robo de identidad es una forma de suplantación usando datos personales reales de la víctima." },
+      { text: "Ransomware: cifrado de archivos para exigir rescate económico", correct: false, feedback: "El ransomware no involucra falsificación de identidades; es un software malicioso que cifra datos para extorsionar." }
+    ]
+  },
+
+  // ════════════════════ TRANSACCIONES ELECTRÓNICAS ════════════════════
+  {
+    type: "single",
+    topic: "Transacciones Electrónicas",
+    question: "¿Cuál es la función principal de una firma digital en una transacción electrónica?",
+    options: [
+      { text: "Cifrar el contenido del documento para que solo el destinatario pueda leerlo", correct: false, feedback: "El cifrado de contenido es función del cifrado asimétrico en general; la firma digital autentica origen e integridad." },
+      { text: "Autenticar la integridad y el origen de un documento electrónico, proporcionando no repudio", correct: true, feedback: "Correcto. La firma digital verifica que el documento no fue alterado y que fue firmado por quien dice haberlo firmado." },
+      { text: "Establecer un canal seguro entre cliente y servidor mediante certificados TLS", correct: false, feedback: "Los certificados TLS establecen el canal; la firma digital se aplica a documentos específicos para autenticarlos." },
+      { text: "Generar un código de un solo uso para la autenticación de doble factor", correct: false, feedback: "Los códigos OTP son parte del 2FA; la firma digital es un mecanismo criptográfico distinto para documentos." }
+    ]
+  },
+  {
+    type: "multi",
+    topic: "Transacciones Electrónicas",
+    question: "¿Cuáles de los siguientes mecanismos contribuyen a asegurar transacciones electrónicas? (Seleccioná todos los correctos)",
+    options: [
+      { text: "Autenticación de Doble Factor (2FA): dos formas de verificación para acceder a una cuenta", correct: true, feedback: "Correcto. El 2FA agrega una capa adicional de verificación, reduciendo el riesgo de acceso no autorizado." },
+      { text: "Certificados digitales: documentos que garantizan la identidad de una entidad en línea", correct: true, feedback: "Correcto. Los certificados digitales permiten establecer conexiones autenticadas y seguras en la web." },
+      { text: "Firmas digitales: autenticación criptográfica de integridad y origen de documentos electrónicos", correct: true, feedback: "Correcto. Las firmas digitales proveen autenticación, integridad y no repudio en transacciones." },
+      { text: "Blockchain: registro distribuido que garantiza transparencia y confianza en transacciones digitales", correct: true, feedback: "Correcto. La tecnología blockchain asegura la inmutabilidad y trazabilidad de las transacciones registradas." },
+      { text: "Antispam: bloqueo de correos no deseados antes de llegar a la bandeja de entrada", correct: false, feedback: "El antispam protege la bandeja de correo pero no es un mecanismo de seguridad para transacciones electrónicas." }
+    ]
+  },
+
+  // ════════════════════ SERVICIOS DE ALOJAMIENTO ════════════════════
+  {
+    type: "single",
+    topic: "Tipos de Servicios",
+    question: "Una empresa elige la modalidad 'Housing' para alojar sus servidores. ¿Qué implica concretamente esta decisión?",
+    options: [
+      { text: "La empresa alquila servidores virtuales al proveedor y paga por consumo de recursos en la nube", correct: false, feedback: "Eso describe Cloud Computing (IaaS); el Housing implica tener servidores físicos propios." },
+      { text: "La empresa alquila un espacio físico en un datacenter externo pero mantiene y administra sus propios servidores", correct: true, feedback: "Correcto. En Housing, la empresa es dueña del hardware; el proveedor solo proporciona el espacio físico y conectividad." },
+      { text: "La empresa subcontrata tanto el espacio como el mantenimiento de servidores al proveedor externo", correct: false, feedback: "Eso describe el Hosting; en Housing la empresa mantiene y administra sus propios equipos." },
+      { text: "La empresa ejecuta todos sus servicios en su propia infraestructura sin depender de ningún proveedor externo", correct: false, feedback: "Eso describe la modalidad 'Local'; Housing siempre implica un proveedor externo que provee el espacio físico." }
+    ]
+  }
+
+];
+
+// ─────────────────────────────────────────────
+//  Estado
+// ─────────────────────────────────────────────
+let shuffledQuestions = [];
+let answers = [];
+let answered = 0;
+// multiState[qi] = Set of selected indices
+let multiState = {};
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function restart() {
+  answered = 0;
+  answers = [];
+  multiState = {};
+  document.getElementById('score-panel').classList.remove('show');
+  document.getElementById('quiz-area').style.display = 'block';
+  buildQuiz();
+}
+
+function buildQuiz() {
+  shuffledQuestions = shuffle(ALL_QUESTIONS);
+  const container = document.getElementById('questions-container');
+  container.innerHTML = '';
+  multiState = {};
+
+  shuffledQuestions.forEach((q, qi) => {
+    const card = document.createElement('div');
+    card.className = 'question-card';
+    card.style.animationDelay = `${qi * 0.03}s`;
+
+    const shuffledOpts = shuffle(q.options);
+    const letters = ['A', 'B', 'C', 'D', 'E'];
+    const isMulti = q.type === 'multi';
+
+    if (isMulti) multiState[qi] = { selected: new Set(), opts: shuffledOpts, submitted: false };
+
+    const numBadge = isMulti
+      ? `<span class="q-num multi-badge">Q${String(qi+1).padStart(2,'0')}</span>`
+      : `<span class="q-num">Q${String(qi+1).padStart(2,'0')}</span>`;
+
+    const multiHint = isMulti
+      ? `<div style="margin-top:0.4rem"><span class="multi-hint">☑ Selección múltiple — marcá todas las correctas</span></div>`
+      : '';
+
+    let optsHTML = '';
+    shuffledOpts.forEach((opt, oi) => {
+      const cls = isMulti ? 'option-btn multi' : 'option-btn single';
+      const onclick = isMulti
+        ? `toggleMulti(this, ${qi}, ${oi})`
+        : `selectSingle(this, ${qi})`;
+      optsHTML += `
+        <button class="${cls}" data-correct="${opt.correct}" data-feedback="${encodeURIComponent(opt.feedback)}" data-oi="${oi}" onclick="${onclick}">
+          <span class="option-letter">${isMulti ? '□' : letters[oi]}</span>
+          <span class="option-text">${opt.text}</span>
+        </button>`;
+    });
+
+    const submitBtn = isMulti
+      ? `<button class="multi-submit" id="submit-${qi}" onclick="submitMulti(${qi})" disabled>Confirmar selección →</button>`
+      : '';
+
+    card.innerHTML = `
+      <div class="q-header">
+        ${numBadge}
+        <div>
+          <div class="q-topic">${q.topic}</div>
+          <div class="q-text">${q.question}</div>
+          ${multiHint}
+        </div>
+      </div>
+      <div class="options" id="opts-${qi}">${optsHTML}</div>
+      ${submitBtn}
+      <div class="feedback" id="fb-${qi}"></div>
+    `;
+    container.appendChild(card);
+  });
+
+  updateProgress();
+}
+
+// ─── SINGLE SELECT ───
+function selectSingle(btn, qi) {
+  if (btn.disabled) return;
+  const opts = document.querySelectorAll(`#opts-${qi} .option-btn`);
+  const isCorrect = btn.dataset.correct === 'true';
+  const feedback = decodeURIComponent(btn.dataset.feedback);
+
+  opts.forEach(b => {
+    b.disabled = true;
+    if (b.dataset.correct === 'true') b.classList.add('correct');
+  });
+  if (!isCorrect) btn.classList.add('wrong');
+
+  showFeedback(qi, isCorrect ? 'correct' : 'wrong', (isCorrect ? '✓ ' : '✗ ') + feedback);
+  recordAnswer(qi, isCorrect ? 'correct' : 'wrong');
+}
+
+// ─── MULTI SELECT ───
+function toggleMulti(btn, qi, oi) {
+  if (multiState[qi].submitted) return;
+  const st = multiState[qi];
+  if (st.selected.has(oi)) {
+    st.selected.delete(oi);
+    btn.classList.remove('selected');
+    btn.querySelector('.option-letter').textContent = '□';
+  } else {
+    st.selected.add(oi);
+    btn.classList.add('selected');
+    btn.querySelector('.option-letter').textContent = '☑';
+  }
+  const submitBtn = document.getElementById(`submit-${qi}`);
+  submitBtn.disabled = st.selected.size === 0;
+}
+
+function submitMulti(qi) {
+  const st = multiState[qi];
+  if (st.submitted) return;
+  st.submitted = true;
+
+  const opts = document.querySelectorAll(`#opts-${qi} .option-btn`);
+  const submitBtn = document.getElementById(`submit-${qi}`);
+  submitBtn.disabled = true;
+
+  const correctIndices = new Set();
+  st.opts.forEach((opt, oi) => { if (opt.correct) correctIndices.add(oi); });
+
+  let allCorrect = true;
+  let allWrong = true;
+
+  opts.forEach(btn => {
+    btn.disabled = true;
+    const oi = parseInt(btn.dataset.oi);
+    const isCorrect = btn.dataset.correct === 'true';
+    const wasSelected = st.selected.has(oi);
+
+    btn.querySelector('.option-letter').textContent = isCorrect ? '✓' : btn.querySelector('.option-letter').textContent;
+
+    if (isCorrect) {
+      if (wasSelected) {
+        btn.classList.remove('selected');
+        btn.classList.add('correct');
+      } else {
+        // Missed correct — mark it so user sees what they missed
+        btn.classList.add('partial-correct');
+        allCorrect = false;
+      }
+    } else if (wasSelected) {
+      btn.classList.remove('selected');
+      btn.classList.add('wrong');
+      allCorrect = false;
+    }
+  });
+
+  // Check if user got exactly right (selected all correct and no wrong)
+  const selectedCorrect = [...st.selected].filter(oi => correctIndices.has(oi)).length;
+  const selectedWrong = [...st.selected].filter(oi => !correctIndices.has(oi)).length;
+  const missedCorrect = correctIndices.size - selectedCorrect;
+
+  let result, feedbackMsg, fbClass;
+  if (selectedCorrect === correctIndices.size && selectedWrong === 0) {
+    result = 'correct';
+    fbClass = 'correct';
+    feedbackMsg = `✓ ¡Perfecto! Seleccionaste todas las ${correctIndices.size} opciones correctas.`;
+  } else if (selectedCorrect > 0 && selectedWrong === 0 && missedCorrect > 0) {
+    result = 'partial';
+    fbClass = 'partial';
+    feedbackMsg = `⚡ Parcial: ${selectedCorrect}/${correctIndices.size} correctas. Te faltó marcar ${missedCorrect} opción(es) correcta(s) (en naranja).`;
+  } else if (selectedCorrect > 0 && selectedWrong > 0) {
+    result = 'partial';
+    fbClass = 'partial';
+    feedbackMsg = `⚡ Parcial: ${selectedCorrect}/${correctIndices.size} correctas, pero marcaste ${selectedWrong} incorrecta(s). Las correctas que faltaron están en naranja.`;
+  } else {
+    result = 'wrong';
+    fbClass = 'wrong';
+    feedbackMsg = `✗ Incorrecto. Las respuestas correctas están marcadas en verde (y en naranja las que te faltó seleccionar).`;
+  }
+
+  showFeedback(qi, fbClass, feedbackMsg);
+  recordAnswer(qi, result);
+}
+
+// ─── SHARED HELPERS ───
+function showFeedback(qi, type, msg) {
+  const fb = document.getElementById(`fb-${qi}`);
+  const cls = type === 'correct' ? 'correct-fb' : type === 'partial' ? 'partial-fb' : 'wrong-fb';
+  fb.textContent = msg;
+  fb.className = `feedback show ${cls}`;
+}
+
+function recordAnswer(qi, result) {
+  const q = shuffledQuestions[qi];
+  answers[qi] = { topic: q.topic, question: q.question, result };
+  answered++;
+  updateProgress();
+  if (answered === shuffledQuestions.length) {
+    setTimeout(showResults, 900);
+  }
+}
+
+function updateProgress() {
+  const total = shuffledQuestions.length;
+  const pct = Math.round((answered / total) * 100);
+  document.getElementById('progress-bar').style.width = pct + '%';
+  document.getElementById('progress-label').textContent = `${answered} de ${total} respondidas`;
+}
+
+function showResults() {
+  document.getElementById('quiz-area').style.display = 'none';
+  const panel = document.getElementById('score-panel');
+  panel.classList.add('show');
+
+  const total = answers.length;
+  const correct = answers.filter(a => a.result === 'correct').length;
+  const partial = answers.filter(a => a.result === 'partial').length;
+  // Partial counts as 0.5
+  const score = correct + partial * 0.5;
+  const pct = Math.round((score / total) * 100);
+
+  const ring = document.getElementById('score-ring');
+  ring.style.setProperty('--pct', pct * 3.6 + 'deg');
+  ring.textContent = pct + '%';
+
+  if (pct >= 80) ring.style.color = 'var(--correct)';
+  else if (pct >= 50) ring.style.color = 'var(--accent3)';
+  else ring.style.color = 'var(--wrong)';
+
+  const verdicts = [
+    [90, '🔒 Experto en Seguridad'],
+    [70, '👍 Buen dominio del tema'],
+    [50, '📚 Necesitás repasar'],
+    [0,  '⚠️ Recomendamos releer el material']
+  ];
+  document.getElementById('score-verdict').textContent = verdicts.find(v => pct >= v[0])[1];
+  document.getElementById('score-detail').textContent =
+    `${correct} perfectas · ${partial} parciales · ${total - correct - partial} incorrectas`;
+
+  const list = document.getElementById('breakdown-list');
+  list.innerHTML = answers.map((a, i) => {
+    const cls = a.result === 'correct' ? 'ok' : a.result === 'partial' ? 'partial' : 'fail';
+    const icon = a.result === 'correct' ? '✓' : a.result === 'partial' ? '~' : '✗';
+    return `
+      <div class="breakdown-item">
+        <span class="bi-topic">${a.topic}</span>
+        <span class="bi-q">${a.question}</span>
+        <span class="bi-result ${cls}">${icon}</span>
+      </div>`;
+  }).join('');
+}
+
+// Inicio
+buildQuiz();
+</script>
+</body>
+</html>
